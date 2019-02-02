@@ -283,6 +283,66 @@ verify:0				verify:1
 Verifier decision: REJECT				Verifier decision: ACCEPT
 ```
 
+[How to run the code](https://github.com/osuketh/stark-rust#how-to-run-the-code)にも以下のように書いてある
+
+> The above execution results in execution of STARK simulation over the fibonacchi sequence.The statement is "I know secret numbers A, B such that the 5th element of the Fibonacci sequence is 131. They are A=52, B=9"
+
+フィボナッチ数列の5番目の要素(`131`)を知っているかをzkしている。
+
+`52, 9, 61, 70, 131`
+
+なので、正しい。
+
+### 別の数字でも`ACCEPT`はず？？
+
+```
+a4 = 131
+
+a0, a1, a2,    a3,    a4
+a0, a1, a0+a1, a1+a2, a2+a3
+
+a2 = a0 + a1
+a3 = a1 + a2
+
+a4 = a2 + a3
+   = a2 + (a1 + a2)
+   = 2 * a2 + a1
+   = 2 * (a0 + a1) + a1
+   = 2*a0 + 3*a1
+```
+
+上記より`2x + 3y = 131`
+となるような`(x, y)`の組を与えれば`ACCEPT`されるはず。
+
+`2x`は偶数なので、`3y`を奇数になるようにすると
+
+`(x, y) = (64, 1), (61, 3), (58, 5), (55, 7), (52, 9), (49, 11), ..., (1, 43)`
+
+※ 二元一次不定方程式`2x + 3y = 131`の解`(x, y)`は負数も取りうるが、今回は`c_uint`で型を付けているので対象外とした。
+※ ちなみに特殊解`(x, y) = (52, 9)`を知っているので、一般解は整数`m`を用いて`(x, y) = (52 + 3m, 9 - 2m)`となる。
+
+`(52, 9)`も含まれていることがわかる。試してみよう。
+
+```sh
+❯ cargo run 64 1
+verify:0
+```
+
+あれ、だめだった。
+`64, 1, 65, 66, 131`なはずでは？
+他はも試してみよう。
+
+```sh
+❯ cargo run 1 43
+verify:0
+
+❯ cargo run 49 11
+verify:0
+```
+
+`(52, 9)`じゃないとだめっぽい。
+[fibonacciの実装](https://github.com/LayerXcom/libSTARK/blob/libstark-rs/fibonacchiseq/main.cpp)をみていく必要がありそう。
+
 
 ## References
 * [osuketh/stark\-rust: zk\-STARK for fibonacci sequence in Rust](https://github.com/osuketh/stark-rust)
